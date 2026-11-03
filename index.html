@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Дневник питания</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+:root{
+  --bg:var(--tg-theme-bg-color,#0f0f10);
+  --sec:var(--tg-theme-secondary-bg-color,#1c1c1e);
+  --txt:var(--tg-theme-text-color,#f2f2f7);
+  --hint:var(--tg-theme-hint-color,#8e8e93);
+  --acc:var(--tg-theme-button-color,#34c759);
+  --acct:var(--tg-theme-button-text-color,#fff);
+  --cP:#5ac8fa;--cF:#ffcc00;--cC:#ff9f0a;--danger:#ff453a;--r:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+body{padding:0 16px 90px}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+input,select{font:inherit;color:var(--txt);background:var(--bg);border:1px solid color-mix(in srgb,var(--hint) 35%,transparent);border-radius:10px;padding:10px 12px;width:100%;outline:none}
+input:focus,select:focus{border-color:var(--acc)}
+.hint{color:var(--hint);font-size:13px}
+.card{background:var(--sec);border-radius:var(--r);padding:14px;margin-top:12px}
+.row{display:flex;gap:8px;align-items:center}
+.grow{flex:1}
+.btn{background:var(--acc);color:var(--acct);border-radius:12px;padding:12px 14px;font-weight:600;width:100%}
+.btn.ghost{background:color-mix(in srgb,var(--acc) 15%,transparent);color:var(--acc)}
+.btn.danger{background:color-mix(in srgb,var(--danger) 15%,transparent);color:var(--danger)}
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 0 2px}
+header button{font-size:22px;width:40px;height:40px;border-radius:50%;background:var(--sec)}
+header .title{font-weight:700;font-size:17px;text-align:center}
+.summary{display:flex;gap:16px;align-items:center}
+.ring{position:relative;width:120px;height:120px;flex:none}
+.ring svg{transform:rotate(-90deg)}
+.ring .c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring b{font-size:24px}
+.macro{margin:6px 0}
+.macro .lbl{display:flex;justify-content:space-between;font-size:13px}
+.bar{height:6px;border-radius:3px;background:color-mix(in srgb,var(--hint) 25%,transparent);overflow:hidden;margin-top:3px}
+.bar i{display:block;height:100%;border-radius:3px;transition:width .3s}
+.meal h3{margin:0;font-size:16px;display:flex;justify-content:space-between;align-items:center}
+.meal h3 .add{background:var(--acc);color:var(--acct);width:30px;height:30px;border-radius:50%;font-size:20px;line-height:30px}
+.entry{display:flex;justify-content:space-between;padding:9px 0;border-top:1px solid color-mix(in srgb,var(--hint) 18%,transparent);gap:10px}
+.entry:first-of-type{margin-top:8px}
+.entry .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.entry .k{white-space:nowrap;font-weight:600}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--sec);padding:6px 8px calc(6px + env(safe-area-inset-bottom));border-top:1px solid color-mix(in srgb,var(--hint) 15%,transparent)}
+nav button{flex:1;padding:8px 0;font-size:12px;color:var(--hint);display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button span{font-size:20px}
+nav button.on{color:var(--acc)}
+.tab[hidden]{display:none}
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;z-index:10}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-height:92vh;overflow:auto;background:var(--bg);border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:11;transform:translateY(100%);transition:transform .25s}
+.open .sheet-bg{display:block}.open .sheet{transform:none}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.grid4 label,.grid2 label{font-size:12px;color:var(--hint)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seg{display:flex;background:var(--sec);border-radius:10px;padding:3px}
+.seg button{flex:1;padding:7px;border-radius:8px;font-size:13px}
+.seg button.on{background:var(--bg);font-weight:600}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.chip{background:var(--sec);border-radius:16px;padding:6px 11px;white-space:nowrap;font-size:13px}
+#reader{width:100%;border-radius:12px;overflow:hidden;background:#000}
+.stack>*+*{margin-top:10px}
+.week{display:flex;align-items:flex-end;gap:6px;height:140px;margin-top:10px}
+.week .d{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;font-size:11px;color:var(--hint)}
+.week .d i{width:100%;border-radius:6px 6px 0 0;background:var(--acc);min-height:2px}
+.week .d i.over{background:var(--danger)}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#000c;color:#fff;padding:9px 14px;border-radius:20px;font-size:14px;z-index:20;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%;text-align:center}
+.toast.show{opacity:1}
+h2{font-size:18px;margin:16px 0 4px}
+.recipe ul,.recipe ol{padding-left:20px;margin:6px 0 10px}
+.recipe li{margin:4px 0}
+.btnrow{display:flex;gap:6px;flex-wrap:wrap}
+.btnrow .btn{flex:1;width:auto;padding:10px;font-size:14px}
+.btn:disabled{opacity:.6}
+.skel{animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.45}}
+.saved{display:flex;gap:10px;align-items:center;cursor:pointer}
+</style>
+</head>
+<body>
+
+<!-- ДНЕВНИК -->
+<div class="tab" id="tab-diary">
+  <header>
+    <button id="prev">‹</button>
+    <div><div class="title" id="dayTitle">Сегодня</div><div class="hint" id="daySub" style="text-align:center"></div></div>
+    <button id="next">›</button>
+  </header>
+  <div class="card summary">
+    <div class="ring">
+      <svg width="120" height="120"><circle cx="60" cy="60" r="52" fill="none" stroke="color-mix(in srgb,var(--hint) 25%,transparent)" stroke-width="10"/>
+        <circle id="ringFg" cx="60" cy="60" r="52" fill="none" stroke="var(--acc)" stroke-width="10" stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="326.7" style="transition:stroke-dashoffset .4s"/></svg>
+      <div class="c"><b id="kLeft">0</b><span class="hint" id="kLeftLbl">осталось</span></div>
+    </div>
+    <div class="grow">
+      <div class="hint" id="kEaten">0 из 0 ккал</div>
+      <div class="macro"><div class="lbl"><span>Белки</span><span id="pV"></span></div><div class="bar"><i id="pB" style="background:var(--cP)"></i></div></div>
+      <div class="macro"><div class="lbl"><span>Жиры</span><span id="fV"></span></div><div class="bar"><i id="fB" style="background:var(--cF)"></i></div></div>
+      <div class="macro"><div class="lbl"><span>Углеводы</span><span id="cV"></span></div><div class="bar"><i id="cB" style="background:var(--cC)"></i></div></div>
+    </div>
+  </div>
+  <div id="meals"></div>
+</div>
+
+<!-- СТАТИСТИКА -->
+<div class="tab" id="tab-stats" hidden>
+  <h2>Последние 7 дней</h2>
+  <div class="card">
+    <div class="hint" id="weekAvg"></div>
+    <div class="week" id="week"></div>
+  </div>
+  <div class="card" id="weekMacros"></div>
+</div>
+
+<!-- ЦЕЛИ -->
+<div class="tab" id="tab-goals" hidden>
+  <h2>Цели на день</h2>
+  <div class="card stack">
+    <div><label class="hint">Калории, ккал</label><input id="gK" type="number" inputmode="numeric"></div>
+    <div class="grid2" style="grid-template-columns:1fr 1fr 1fr">
+      <div><label>Белки, г</label><input id="gP" type="number" inputmode="numeric"></div>
+      <div><label>Жиры, г</label><input id="gF" type="number" inputmode="numeric"></div>
+      <div><label>Углеводы, г</label><input id="gC" type="number" inputmode="numeric"></div>
+    </div>
+    <button class="btn" id="saveGoals">Сохранить цели</button>
+  </div>
+  <h2>Рассчитать норму</h2>
+  <div class="card stack">
+    <div class="seg" id="sex"><button data-v="m" class="on">Муж</button><button data-v="f">Жен</button></div>
+    <div class="grid2" style="grid-template-columns:1fr 1fr 1fr">
+      <div><label>Возраст</label><input id="cAge" type="number" inputmode="numeric" placeholder="22"></div>
+      <div><label>Рост, см</label><input id="cH" type="number" inputmode="numeric" placeholder="180"></div>
+      <div><label>Вес, кг</label><input id="cW" type="number" inputmode="decimal" placeholder="75"></div>
+    </div>
+    <div><label class="hint">Активность</label>
+      <select id="cAct">
+        <option value="1.2">Минимальная (сидячая работа)</option>
+        <option value="1.375">Лёгкая (1–3 тренировки в неделю)</option>
+        <option value="1.55" selected>Средняя (3–5 тренировок / работа на ногах)</option>
+        <option value="1.725">Высокая (6–7 тренировок / тяжёлый труд)</option>
+      </select></div>
+    <div class="seg" id="cGoal"><button data-v="-0.15">Похудеть</button><button data-v="0" class="on">Держать</button><button data-v="0.1">Набрать</button></div>
+    <button class="btn ghost" id="calc">Рассчитать и подставить</button>
+    <div class="hint">Формула Миффлина–Сан Жеора. Это ориентир, не медицинская рекомендация.</div>
+  </div>
+</div>
+
+<!-- РЕЦЕПТЫ (ИИ) -->
+<div class="tab" id="tab-recipes" hidden>
+  <h2>Придумать блюдо</h2>
+  <div class="card stack">
+    <div class="seg" id="rMeal"><button data-v="0">Завтрак</button><button data-v="1">Обед</button><button data-v="2">Ужин</button><button data-v="3">Перекус</button></div>
+    <div class="seg" id="rTarget"><button data-v="norm" class="on">Под мою норму</button><button data-v="free">Без ограничений</button></div>
+    <div class="hint" id="rInfo"></div>
+    <div><label class="hint">Что есть дома (необязательно)</label><input id="rHave" placeholder="курица, рис, брокколи"></div>
+    <div><label class="hint">Пожелания</label><input id="rWish" placeholder="без духовки, до 20 минут, острое"></div>
+    <div><label class="hint">Исключить</label><input id="rNo" placeholder="грибы, лук"></div>
+    <button class="btn" id="rGo">✨ Придумать</button>
+  </div>
+  <div id="rOut"></div>
+  <h2 id="rSavedH" hidden>Сохранённые</h2>
+  <div id="rSaved"></div>
+</div>
+
+<nav>
+  <button data-tab="diary" class="on"><span>🍽</span>Дневник</button>
+  <button data-tab="recipes"><span>🍳</span>Рецепты</button>
+  <button data-tab="stats"><span>📊</span>Статистика</button>
+  <button data-tab="goals"><span>🎯</span>Цели</button>
+</nav>
+
+<!-- ШТОРКА ДОБАВЛЕНИЯ -->
+<div id="sheetWrap">
+  <div class="sheet-bg" id="sheetBg"></div>
+  <div class="sheet stack">
+    <div class="row"><b class="grow" id="sheetTitle" style="font-size:17px">Добавить</b><button id="closeSheet" style="font-size:22px;color:var(--hint)">✕</button></div>
+    <div class="seg" id="mealSel"></div>
+
+    <div id="scanBox" hidden><div id="reader"></div><button class="btn ghost" id="stopScan" style="margin-top:8px">Отмена</button></div>
+    <div class="row" id="scanRow">
+      <button class="btn ghost" id="startScan" style="width:auto;flex:none">📷 Скан</button>
+      <input id="bcInput" class="grow" placeholder="или введи штрихкод" inputmode="numeric">
+      <button class="btn ghost" id="bcFind" style="width:auto;flex:none">Найти</button>
+    </div>
+
+    <div id="recentWrap"><div class="hint" style="margin-bottom:6px">Недавние</div><div class="chips" id="recent"></div></div>
+
+    <div><label class="hint">Название</label><input id="fName" placeholder="Гречка варёная"></div>
+    <div class="row">
+      <div class="grow"><label class="hint">Вес, г</label><input id="fG" type="number" inputmode="decimal" value="100"></div>
+      <div class="grow"><label class="hint">КБЖУ указано</label><div class="seg" id="mode"><button data-v="100" class="on">на 100 г</button><button data-v="all">на всё</button></div></div>
+    </div>
+    <div class="grid4">
+      <div><label>Ккал</label><input id="fK" type="number" inputmode="decimal" placeholder="авто"></div>
+      <div><label>Б</label><input id="fP" type="number" inputmode="decimal" placeholder="0"></div>
+      <div><label>Ж</label><input id="fF" type="number" inputmode="decimal" placeholder="0"></div>
+      <div><label>У</label><input id="fC" type="number" inputmode="decimal" placeholder="0"></div>
+    </div>
+    <div class="hint" id="preview"></div>
+    <button class="btn" id="saveEntry">Добавить</button>
+    <button class="btn danger" id="delEntry" hidden>Удалить</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const tg = window.Telegram && window.Telegram.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
+const haptic = t => { try { tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred(t || 'light'); } catch (e) {} };
+
+/* ---------- Хранилище: облако Telegram + localStorage как кэш ---------- */
+const cloud = !!(tg && tg.initData && tg.CloudStorage && tg.isVersionAtLeast && tg.isVersionAtLeast('6.9'));
+const ls = {
+  get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} },
+  del: k => { try { localStorage.removeItem(k); } catch (e) {} }
+};
+function sGet(keys) {
+  return new Promise(res => {
+    const local = {}; keys.forEach(k => local[k] = ls.get(k));
+    if (!cloud) return res(local);
+    tg.CloudStorage.getItems(keys, (err, vals) => {
+      if (err || !vals) return res(local);
+      const out = {};
+      keys.forEach(k => { out[k] = vals[k] || local[k]; if (vals[k]) ls.set(k, vals[k]); });
+      res(out);
+    });
+  });
+}
+function sSet(k, v) {
+  ls.set(k, v);
+  if (cloud) tg.CloudStorage.setItem(k, v, err => { if (err) toast('Облако не сохранило, данные есть на устройстве'); });
+}
+function sDel(k) { ls.del(k); if (cloud) tg.CloudStorage.removeItem(k, () => {}); }
+const parse = (s, d) => { try { return s ? JSON.parse(s) : d; } catch (e) { return d; } };
+
+/* ---------- Состояние ---------- */
+const MEALS = ['Завтрак', 'Обед', 'Ужин', 'Перекус'];
+let day = new Date();
+let entries = [];
+let goals = { k: 2200, p: 120, f: 70, c: 250 };
+let recent = [];
+let editId = null, curMeal = 0, curCode = null, mode = '100';
+
+const iso = d => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+const r1 = x => Math.round(x * 10) / 10;
+const num = v => { const n = parseFloat(String(v ?? '').replace(',', '.')); return isFinite(n) ? n : null; };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const tot = e => ({ k: e.k * e.g / 100, p: e.p * e.g / 100, f: e.f * e.g / 100, c: e.c * e.g / 100 });
+function sum(list) {
+  return list.reduce((a, e) => { const t = tot(e); a.k += t.k; a.p += t.p; a.f += t.f; a.c += t.c; return a; }, { k: 0, p: 0, f: 0, c: 0 });
+}
+let toastT;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600); }
+
+/* ---------- Дневник ---------- */
+async function loadDay() {
+  const k = 'd_' + iso(day);
+  const r = await sGet([k]);
+  entries = parse(r[k], []);
+  renderDay();
+}
+function saveDay() {
+  const k = 'd_' + iso(day);
+  if (!entries.length) return sDel(k);
+  const v = JSON.stringify(entries);
+  if (v.length > 4000) toast('Слишком много записей за день для облака — сохранено на устройстве');
+  sSet(k, v);
+}
+function renderDay() {
+  const t = iso(day), today = iso(new Date());
+  const y = new Date(); y.setDate(y.getDate() - 1);
+  $('#dayTitle').textContent = t === today ? 'Сегодня' : t === iso(y) ? 'Вчера' : day.toLocaleDateString('ru-RU', { weekday: 'long' });
+  $('#daySub').textContent = day.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+  $('#next').style.visibility = t >= today ? 'hidden' : 'visible';
+
+  const s = sum(entries);
+  const left = Math.round(goals.k - s.k);
+  $('#kLeft').textContent = Math.abs(left);
+  $('#kLeftLbl').textContent = left >= 0 ? 'осталось' : 'сверх нормы';
+  $('#kEaten').textContent = `${Math.round(s.k)} из ${goals.k} ккал`;
+  const C = 326.7, ratio = Math.min(s.k / (goals.k || 1), 1);
+  $('#ringFg').style.strokeDashoffset = C * (1 - ratio);
+  $('#ringFg').style.stroke = left < 0 ? 'var(--danger)' : 'var(--acc)';
+  [['p', 'P'], ['f', 'F'], ['c', 'C']].forEach(([k, K]) => {
+    $('#' + k + 'V').textContent = `${Math.round(s[k])} / ${goals[k]} г`;
+    $('#' + k + 'B').style.width = Math.min(100, s[k] / (goals[k] || 1) * 100) + '%';
+  });
+
+  $('#meals').innerHTML = MEALS.map((name, i) => {
+    const list = entries.filter(e => e.m === i);
+    const mk = Math.round(sum(list).k);
+    return `<div class="card meal"><h3><span>${name} ${mk ? `<span class="hint">· ${mk} ккал</span>` : ''}</span><button class="add" data-meal="${i}">+</button></h3>
+      ${list.map(e => { const tt = tot(e); return `<div class="entry" data-id="${e.id}">
+        <div style="min-width:0"><div class="n">${esc(e.n)}</div><div class="hint">${r1(e.g)} г · Б ${r1(tt.p)} Ж ${r1(tt.f)} У ${r1(tt.c)}</div></div>
+        <div class="k">${Math.round(tt.k)}</div></div>`; }).join('')}</div>`;
+  }).join('');
+}
+$('#meals').addEventListener('click', ev => {
+  const add = ev.target.closest('[data-meal]');
+  if (add) return openSheet(+add.dataset.meal);
+  const row = ev.target.closest('.entry');
+  if (row) { const e = entries.find(x => x.id === row.dataset.id); if (e) openSheet(e.m, e); }
+});
+$('#prev').onclick = () => { day.setDate(day.getDate() - 1); haptic(); loadDay(); };
+$('#next').onclick = () => { if (iso(day) < iso(new Date())) { day.setDate(day.getDate() + 1); haptic(); loadDay(); } };
+
+/* ---------- Шторка добавления ---------- */
+$('#mealSel').innerHTML = MEALS.map((m, i) => `<button data-v="${i}">${m}</button>`).join('');
+function setSeg(sel, v) { document.querySelectorAll(sel + ' button').forEach(b => b.classList.toggle('on', b.dataset.v === String(v))); }
+document.querySelectorAll('.seg').forEach(seg => seg.addEventListener('click', ev => {
+  const b = ev.target.closest('button'); if (!b) return;
+  seg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+  if (seg.id === 'mealSel') curMeal = +b.dataset.v;
+  if (seg.id === 'mode') { mode = b.dataset.v; preview(); }
+  if (seg.id === 'rMeal' || seg.id === 'rTarget') renderTargetInfo();
+}));
+
+function defaultMeal() { const h = new Date().getHours(); return h < 11 ? 0 : h < 16 ? 1 : h < 21 ? 2 : 3; }
+function openSheet(meal, entry) {
+  editId = entry ? entry.id : null; curCode = entry ? entry.b || null : null;
+  curMeal = meal ?? defaultMeal(); setSeg('#mealSel', curMeal);
+  mode = '100'; setSeg('#mode', '100');
+  $('#sheetTitle').textContent = entry ? 'Изменить' : 'Добавить';
+  $('#saveEntry').textContent = entry ? 'Сохранить' : 'Добавить';
+  $('#delEntry').hidden = !entry;
+  $('#recentWrap').hidden = !!entry || !recent.length;
+  $('#scanRow').hidden = !!entry;
+  $('#bcInput').value = '';
+  fillForm(entry || { n: '', g: 100, k: '', p: '', f: '', c: '' });
+  renderRecent();
+  document.body.classList.add('open');
+}
+function closeSheet() { stopScan(); document.body.classList.remove('open'); }
+$('#sheetBg').onclick = closeSheet; $('#closeSheet').onclick = closeSheet;
+
+function fillForm(o) {
+  $('#fName').value = o.n || '';
+  if (o.g != null) $('#fG').value = r1(o.g);
+  const v = x => (x === '' || x == null) ? '' : r1(x);
+  $('#fK').value = v(o.k); $('#fP').value = v(o.p); $('#fF').value = v(o.f); $('#fC').value = v(o.c);
+  if (o.b) curCode = o.b;
+  mode = '100'; setSeg('#mode', '100');
+  preview();
+}
+function readForm() {
+  const g = num($('#fG').value) || 0;
+  let p = num($('#fP').value) || 0, f = num($('#fF').value) || 0, c = num($('#fC').value) || 0;
+  let k = num($('#fK').value);
+  if (k == null) k = p * 4 + f * 9 + c * 4;   // ккал из БЖУ, если не указаны
+  if (mode === 'all' && g > 0) { const m = 100 / g; k *= m; p *= m; f *= m; c *= m; }
+  return { n: $('#fName').value.trim() || 'Без названия', g, k, p, f, c };
+}
+function preview() {
+  const o = readForm();
+  if (!o.g) { $('#preview').textContent = 'Укажи вес'; return; }
+  const t = tot(o);
+  $('#preview').textContent = `Итого: ${Math.round(t.k)} ккал · Б ${r1(t.p)} · Ж ${r1(t.f)} · У ${r1(t.c)}`;
+}
+['#fG', '#fK', '#fP', '#fF', '#fC'].forEach(s => $(s).addEventListener('input', preview));
+
+$('#saveEntry').onclick = () => {
+  const o = readForm();
+  if (!o.g) return toast('Укажи вес в граммах');
+  if (!$('#fName').value.trim() && !o.k) return toast('Заполни название или КБЖУ');
+  const e = { id: editId || Date.now().toString(36), m: curMeal, n: o.n, g: r1(o.g), k: r1(o.k), p: r1(o.p), f: r1(o.f), c: r1(o.c) };
+  if (curCode) e.b = curCode;
+  if (editId) entries = entries.map(x => x.id === editId ? e : x); else entries.push(e);
+  saveDay(); remember(e); haptic('medium'); closeSheet(); renderDay();
+  toast(editId ? 'Сохранено' : 'Добавлено');
+};
+$('#delEntry').onclick = () => {
+  const go = () => { entries = entries.filter(x => x.id !== editId); saveDay(); closeSheet(); renderDay(); haptic('medium'); };
+  if (tg && tg.showConfirm && tg.isVersionAtLeast('6.2')) tg.showConfirm('Удалить запись?', ok => ok && go()); else if (confirm('Удалить запись?')) go();
+};
+
+/* ---------- Недавние продукты (и свои штрихкоды) ---------- */
+function remember(e) {
+  const item = { n: e.n, g: e.g, k: e.k, p: e.p, f: e.f, c: e.c };
+  if (e.b) item.b = e.b;
+  recent = [item, ...recent.filter(r => !(r.n === item.n && (r.b || '') === (item.b || '')))].slice(0, 25);
+  sSet('recent', JSON.stringify(recent));
+}
+function renderRecent() {
+  $('#recent').innerHTML = recent.map((r, i) => `<button class="chip" data-i="${i}">${esc(r.n)}</button>`).join('');
+}
+$('#recent').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-i]'); if (!b) return;
+  fillForm(recent[+b.dataset.i]); haptic();
+});
+
+/* ---------- Штрихкоды: камера + Open Food Facts ---------- */
+let scanner = null, scanning = false;
+$('#startScan').onclick = startScan;
+$('#stopScan').onclick = stopScan;
+$('#bcFind').onclick = () => lookup($('#bcInput').value);
+async function startScan() {
+  if (!window.Html5Qrcode) return toast('Сканер не загрузился — введи код вручную');
+  $('#scanBox').hidden = false; scanning = true;
+  const F = Html5QrcodeSupportedFormats;
+  scanner = new Html5Qrcode('reader', { formatsToSupport: [F.EAN_13, F.EAN_8, F.UPC_A, F.UPC_E], verbose: false });
+  try {
+    await scanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 260, height: 120 } }, code => {
+      if (!scanning) return; scanning = false; haptic('medium'); stopScan(); lookup(code);
+    });
+  } catch (e) { stopScan(); toast('Нет доступа к камере — введи код вручную'); }
+}
+async function stopScan() {
+  scanning = false;
+  if (scanner) { const s = scanner; scanner = null; try { await s.stop(); } catch (e) {} try { s.clear(); } catch (e) {} }
+  $('#scanBox').hidden = true;
+}
+async function lookup(raw) {
+  const code = String(raw || '').replace(/\D/g, '');
+  if (code.length < 8) return toast('Штрихкод — 8 или 13 цифр');
+  curCode = code; $('#bcInput').value = code;
+  const own = recent.find(r => r.b === code);
+  if (own) { fillForm(own); return toast('Нашёл в твоих продуктах'); }
+  toast('Ищу в базе…');
+  try {
+    const r = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json?fields=product_name,product_name_ru,brands,nutriments`);
+    const j = await r.json();
+    if (j.status === 1 && j.product) {
+      const p = j.product, n = p.nutriments || {};
+      let k = num(n['energy-kcal_100g']);
+      if (k == null && num(n['energy_100g']) != null) k = num(n['energy_100g']) / 4.184; // кДж → ккал
+      const name = [p.product_name_ru || p.product_name, p.brands && p.brands.split(',')[0]].filter(Boolean).join(' · ');
+      fillForm({ n: name || 'Продукт ' + code, k: k ?? '', p: num(n.proteins_100g) ?? '', f: num(n.fat_100g) ?? '', c: num(n.carbohydrates_100g) ?? '', b: code });
+      toast(k == null ? 'КБЖУ в базе нет — перепиши с упаковки, я запомню' : 'Нашёл! Укажи сколько грамм');
+    } else {
+      fillForm({ n: '', k: '', p: '', f: '', c: '', b: code });
+      toast('В базе нет — введи КБЖУ с упаковки, запомню этот код');
+    }
+  } catch (e) { toast('Нет связи с базой продуктов'); }
+}
+
+/* ---------- Статистика ---------- */
+async function renderStats() {
+  const days = [];
+  for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); days.push(d); }
+  const keys = days.map(d => 'd_' + iso(d));
+  const r = await sGet(keys);
+  const sums = keys.map(k => sum(parse(r[k], [])));
+  const max = Math.max(goals.k, ...sums.map(s => s.k)) || 1;
+  $('#week').innerHTML = sums.map((s, i) => `<div class="d"><span>${s.k ? Math.round(s.k) : ''}</span>
+    <i class="${s.k > goals.k ? 'over' : ''}" style="height:${s.k / max * 100}%"></i>
+    <span>${days[i].toLocaleDateString('ru-RU', { weekday: 'short' })}</span></div>`).join('');
+  const filled = sums.filter(s => s.k > 0);
+  if (!filled.length) { $('#weekAvg').textContent = 'Пока нет записей'; $('#weekMacros').innerHTML = '<div class="hint">Добавь еду в дневник — тут появится средний КБЖУ.</div>'; return; }
+  const avg = k => filled.reduce((a, s) => a + s[k], 0) / filled.length;
+  $('#weekAvg').textContent = `В среднем ${Math.round(avg('k'))} ккал в день (дней с записями: ${filled.length}) · цель ${goals.k}`;
+  $('#weekMacros').innerHTML = `<b>Средний БЖУ</b>` + [['Белки', 'p', 'cP'], ['Жиры', 'f', 'cF'], ['Углеводы', 'c', 'cC']].map(([n, k, col]) =>
+    `<div class="macro"><div class="lbl"><span>${n}</span><span>${Math.round(avg(k))} / ${goals[k]} г</span></div>
+     <div class="bar"><i style="width:${Math.min(100, avg(k) / (goals[k] || 1) * 100)}%;background:var(--${col})"></i></div></div>`).join('');
+}
+
+/* ---------- Цели ---------- */
+function showGoals() { $('#gK').value = goals.k; $('#gP').value = goals.p; $('#gF').value = goals.f; $('#gC').value = goals.c; }
+$('#saveGoals').onclick = () => {
+  goals = { k: Math.round(num($('#gK').value) || 2000), p: Math.round(num($('#gP').value) || 0), f: Math.round(num($('#gF').value) || 0), c: Math.round(num($('#gC').value) || 0) };
+  sSet('goals', JSON.stringify(goals)); haptic('medium'); toast('Цели сохранены'); renderDay();
+};
+$('#calc').onclick = () => {
+  const a = num($('#cAge').value), h = num($('#cH').value), w = num($('#cW').value);
+  if (!a || !h || !w) return toast('Заполни возраст, рост и вес');
+  const male = document.querySelector('#sex .on').dataset.v === 'm';
+  const bmr = 10 * w + 6.25 * h - 5 * a + (male ? 5 : -161);
+  const k = Math.round(bmr * +$('#cAct').value * (1 + +document.querySelector('#cGoal .on').dataset.v));
+  const p = Math.round(w * 1.6), f = Math.round(w * 0.9);
+  const c = Math.max(0, Math.round((k - p * 4 - f * 9) / 4));
+  $('#gK').value = k; $('#gP').value = p; $('#gF').value = f; $('#gC').value = c;
+  toast('Подставил — проверь и нажми «Сохранить цели»');
+};
+
+/* ---------- Рецепты от ИИ ---------- */
+const API_URL = ''; // ← вставь адрес своего Cloudflare Worker, например https://nutrition-ai.ТВОЙ-НИК.workers.dev
+const SHARE = [0.25, 0.35, 0.3, 0.15]; // доля дневной нормы на завтрак/обед/ужин/перекус
+let lastReq = null, shown = null, savedList = [], recipesInit = false;
+
+function mealTarget(meal) {
+  const s = sum(entries);
+  const left = { k: goals.k - s.k, p: goals.p - s.p, f: goals.f - s.f, c: goals.c - s.c };
+  if (left.k < 120) return null;
+  const k = Math.min(left.k, goals.k * SHARE[meal]);
+  const ratio = k / (goals.k || 1);
+  const part = x => Math.max(0, Math.round(Math.min(left[x], goals[x] * ratio)));
+  return { k: Math.round(k), p: part('p'), f: part('f'), c: part('c') };
+}
+const rMeal = () => +document.querySelector('#rMeal .on').dataset.v;
+const rFree = () => document.querySelector('#rTarget .on').dataset.v === 'free';
+function renderTargetInfo() {
+  const t = mealTarget(rMeal());
+  $('#rInfo').textContent = rFree() ? 'Без ограничений по калориям'
+    : t ? `Цель на приём: ≈ ${t.k} ккал · Б ${t.p} · Ж ${t.f} · У ${t.c}`
+    : 'Норма на этот день почти выбрана — включи «Без ограничений»';
+}
+
+async function genRecipe(again) {
+  if (!API_URL) return toast('Рецепты скоро заработают — сервер ещё не подключён');
+  let body;
+  if (again && lastReq) body = { ...lastReq.body, avoid: lastReq.names.slice(-5) };
+  else {
+    const meal = rMeal(), target = rFree() ? null : mealTarget(meal);
+    if (!rFree() && !target) return toast('Норма почти выбрана — включи «Без ограничений»');
+    body = { meal: MEALS[meal], target, have: $('#rHave').value.trim().slice(0, 200), wish: $('#rWish').value.trim().slice(0, 200), exclude: $('#rNo').value.trim().slice(0, 200) };
+    lastReq = { body, meal, names: [] };
+  }
+  const btn = $('#rGo'); btn.disabled = true; btn.textContent = 'Придумываю…';
+  $('#rOut').innerHTML = '<div class="card skel hint">Шеф думает над рецептом… обычно 5–20 секунд</div>';
+  try {
+    const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Init-Data': (tg && tg.initData) || '' }, body: JSON.stringify(body) });
+    const j = await res.json().catch(() => ({ error: 'Сервер ответил непонятно' }));
+    if (!res.ok || j.error) throw new Error(j.error || 'Ошибка ' + res.status);
+    lastReq.names.push(j.name);
+    renderRecipe(j, lastReq.meal, null);
+    haptic('medium');
+  } catch (e) {
+    $('#rOut').innerHTML = `<div class="card hint">Не получилось: ${esc(e.message)}. Попробуй ещё раз.</div>`;
+  } finally { btn.disabled = false; btn.textContent = '✨ Придумать'; }
+}
+$('#rGo').onclick = () => genRecipe(false);
+
+function recipeTotals(r) {
+  const n = Math.max(1, r.servings || 1);
+  const s = (r.ingredients || []).reduce((a, i) => { a.g += +i.grams || 0; a.k += +i.kcal || 0; a.p += +i.p || 0; a.f += +i.f || 0; a.c += +i.c || 0; return a; }, { g: 0, k: 0, p: 0, f: 0, c: 0 });
+  for (const k in s) s[k] /= n;
+  return s;
+}
+function renderRecipe(r, meal, savedId) {
+  shown = { r, meal, savedId };
+  const t = recipeTotals(r);
+  $('#rOut').innerHTML = `<div class="card recipe">
+    <h3 style="margin:0 0 4px">${esc(r.name)}</h3>
+    ${r.description ? `<div class="hint">${esc(r.description)}</div>` : ''}
+    <div class="hint" style="margin-top:6px">⏱ ${r.time_min ? r.time_min + ' мин' : '—'} · порций: ${r.servings || 1} · ${MEALS[meal]}</div>
+    <div style="margin-top:8px"><b>${Math.round(t.k)} ккал</b> на порцию · Б ${Math.round(t.p)} · Ж ${Math.round(t.f)} · У ${Math.round(t.c)}
+      <div class="hint">порция ≈ ${Math.round(t.g)} г продуктов, КБЖУ примерное</div></div>
+    <b style="display:block;margin-top:10px">Ингредиенты</b>
+    <ul>${r.ingredients.map(i => `<li>${esc(i.name)} — ${Math.round(i.grams)} г</li>`).join('')}</ul>
+    <b>Как готовить</b>
+    <ol>${r.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>
+    ${r.tips ? `<div class="hint">💡 ${esc(r.tips)}</div>` : ''}
+    <div class="btnrow" style="margin-top:12px">
+      <button class="btn" data-act="add">➕ В дневник</button>
+      ${savedId ? '<button class="btn danger" data-act="del">Удалить</button>' : '<button class="btn ghost" data-act="save">⭐ Сохранить</button>'}
+      ${!savedId && lastReq ? '<button class="btn ghost" data-act="again">🔄 Другое</button>' : ''}
+    </div></div>`;
+}
+$('#rOut').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-act]'); if (!b || !shown) return;
+  const a = b.dataset.act;
+  if (a === 'again') return genRecipe(true);
+  if (a === 'save') return saveRecipe();
+  if (a === 'del') return delRecipe();
+  if (a === 'add') {
+    const t = recipeTotals(shown.r);
+    if (!t.g) return toast('У рецепта нет веса порции');
+    const m = 100 / t.g;
+    entries.push({ id: Date.now().toString(36), m: shown.meal, n: shown.r.name.slice(0, 60), g: r1(t.g), k: r1(t.k * m), p: r1(t.p * m), f: r1(t.f * m), c: r1(t.c * m) });
+    saveDay(); renderDay(); renderTargetInfo(); haptic('medium');
+    toast(`Добавлено в «${MEALS[shown.meal]}»`);
+  }
+});
+
+async function loadSaved() { const r = await sGet(['rlist']); savedList = parse(r.rlist, []); renderSaved(); }
+function renderSaved() {
+  $('#rSavedH').hidden = !savedList.length;
+  $('#rSaved').innerHTML = savedList.map(s => `<div class="card saved" data-sid="${s.id}"><div class="grow entry" style="border:0;padding:0"><span class="n">${esc(s.n)}</span></div><span class="hint">${s.k} ккал ›</span></div>`).join('');
+}
+function saveRecipe() {
+  const id = Date.now().toString(36), v = JSON.stringify(shown.r);
+  if (v.length > 4000) ls.set('r_' + id, v); else sSet('r_' + id, v); // большой рецепт — только на устройстве
+  const t = recipeTotals(shown.r);
+  savedList = [{ id, n: shown.r.name, k: Math.round(t.k), m: shown.meal }, ...savedList];
+  savedList.slice(20).forEach(s => sDel('r_' + s.id));
+  savedList = savedList.slice(0, 20);
+  sSet('rlist', JSON.stringify(savedList));
+  renderRecipe(shown.r, shown.meal, id); renderSaved(); haptic(); toast('Сохранено');
+}
+function delRecipe() {
+  const id = shown.savedId;
+  sDel('r_' + id);
+  savedList = savedList.filter(s => s.id !== id);
+  sSet('rlist', JSON.stringify(savedList));
+  $('#rOut').innerHTML = ''; shown = null; renderSaved(); toast('Удалено');
+}
+$('#rSaved').addEventListener('click', async ev => {
+  const c = ev.target.closest('[data-sid]'); if (!c) return;
+  const s = savedList.find(x => x.id === c.dataset.sid); if (!s) return;
+  const r = await sGet(['r_' + s.id]);
+  const rec = parse(r['r_' + s.id], null);
+  if (!rec) return toast('Рецепт не найден на этом устройстве');
+  renderRecipe(rec, s.m ?? 1, s.id);
+  $('#rOut').scrollIntoView({ behavior: 'smooth' });
+});
+
+/* ---------- Вкладки ---------- */
+document.querySelector('nav').addEventListener('click', ev => {
+  const b = ev.target.closest('button'); if (!b) return;
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.tab').forEach(t => t.hidden = t.id !== 'tab-' + b.dataset.tab);
+  haptic();
+  if (b.dataset.tab === 'stats') renderStats();
+  if (b.dataset.tab === 'goals') showGoals();
+  if (b.dataset.tab === 'diary') renderDay();
+  if (b.dataset.tab === 'recipes') {
+    if (!recipesInit) { setSeg('#rMeal', defaultMeal()); recipesInit = true; }
+    renderTargetInfo(); loadSaved();
+  }
+});
+
+/* ---------- Старт ---------- */
+(async () => {
+  const r = await sGet(['goals', 'recent']);
+  goals = parse(r.goals, goals);
+  recent = parse(r.recent, []);
+  await loadDay();
+})();
+</script>
+</body>
+</html>
