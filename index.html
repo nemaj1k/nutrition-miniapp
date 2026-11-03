@@ -8,13 +8,15 @@
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
 :root{
-  --bg:var(--tg-theme-bg-color,#0f0f10);
-  --sec:var(--tg-theme-secondary-bg-color,#1c1c1e);
-  --txt:var(--tg-theme-text-color,#f2f2f7);
-  --hint:var(--tg-theme-hint-color,#8e8e93);
-  --acc:var(--tg-theme-button-color,#34c759);
-  --acct:var(--tg-theme-button-text-color,#fff);
-  --cP:#5ac8fa;--cF:#ffcc00;--cC:#ff9f0a;--danger:#ff453a;--r:14px;
+  color-scheme:light;
+  --bg:#F1F7F7;
+  --sec:#D5E5E5;
+  --txt:#2F3A3A;
+  --hint:#4F5C5C;
+  --acc:#5D6B6B;
+  --acct:#F1F7F7;
+  --pink:#F7CBCA;
+  --cP:#4F9EA1;--cF:#E08F8E;--cC:#A89B9B;--danger:#A8434A;--r:14px;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
@@ -42,7 +44,7 @@ header .title{font-weight:700;font-size:17px;text-align:center}
 .bar{height:6px;border-radius:3px;background:color-mix(in srgb,var(--hint) 25%,transparent);overflow:hidden;margin-top:3px}
 .bar i{display:block;height:100%;border-radius:3px;transition:width .3s}
 .meal h3{margin:0;font-size:16px;display:flex;justify-content:space-between;align-items:center}
-.meal h3 .add{background:var(--acc);color:var(--acct);width:30px;height:30px;border-radius:50%;font-size:20px;line-height:30px}
+.meal h3 .add{background:var(--pink);color:var(--txt);width:30px;height:30px;border-radius:50%;font-size:20px;line-height:30px}
 .entry{display:flex;justify-content:space-between;padding:9px 0;border-top:1px solid color-mix(in srgb,var(--hint) 18%,transparent);gap:10px}
 .entry:first-of-type{margin-top:8px}
 .entry .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -212,7 +214,10 @@ h2{font-size:18px;margin:16px 0 4px}
 <script>
 const $ = s => document.querySelector(s);
 const tg = window.Telegram && window.Telegram.WebApp;
-if (tg) { tg.ready(); tg.expand(); }
+if (tg) {
+  tg.ready(); tg.expand();
+  try { tg.setHeaderColor('#F1F7F7'); tg.setBackgroundColor('#F1F7F7'); tg.setBottomBarColor && tg.setBottomBarColor('#D5E5E5'); } catch (e) {}
+}
 const haptic = t => { try { tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred(t || 'light'); } catch (e) {} };
 
 /* ---------- Хранилище: облако Telegram + localStorage как кэш ---------- */
