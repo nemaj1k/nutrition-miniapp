@@ -19,6 +19,7 @@
   --cP:#4F9EA1;--cF:#E08F8E;--cC:#A89B9B;--danger:#A8434A;--r:14px;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
 html,body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
 body{padding:0 16px 90px}
 button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
@@ -28,11 +29,12 @@ input:focus,select:focus{border-color:var(--acc)}
 .card{background:var(--sec);border-radius:var(--r);padding:14px;margin-top:12px}
 .row{display:flex;gap:8px;align-items:center}
 .grow{flex:1}
-.btn{background:var(--acc);color:var(--acct);border-radius:12px;padding:12px 14px;font-weight:600;width:100%}
+.btn{background:var(--acc);color:var(--acct);border-radius:12px;padding:12px 14px;font-weight:600;width:100%;display:flex;align-items:center;justify-content:center;gap:8px}
+.ic{display:block;flex:none}
 .btn.ghost{background:color-mix(in srgb,var(--acc) 15%,transparent);color:var(--acc)}
 .btn.danger{background:color-mix(in srgb,var(--danger) 15%,transparent);color:var(--danger)}
 header{display:flex;align-items:center;justify-content:space-between;padding:14px 0 2px}
-header button{font-size:22px;width:40px;height:40px;border-radius:50%;background:var(--sec)}
+header button{width:40px;height:40px;border-radius:50%;background:var(--sec);display:grid;place-items:center;padding:0;color:var(--txt)}
 header .title{font-weight:700;font-size:17px;text-align:center}
 .summary{display:flex;gap:16px;align-items:center}
 .ring{position:relative;width:120px;height:120px;flex:none}
@@ -44,15 +46,17 @@ header .title{font-weight:700;font-size:17px;text-align:center}
 .bar{height:6px;border-radius:3px;background:color-mix(in srgb,var(--hint) 25%,transparent);overflow:hidden;margin-top:3px}
 .bar i{display:block;height:100%;border-radius:3px;transition:width .3s}
 .meal h3{margin:0;font-size:16px;display:flex;justify-content:space-between;align-items:center}
-.meal h3 .add{background:var(--pink);color:var(--txt);width:30px;height:30px;border-radius:50%;font-size:20px;line-height:30px}
+.meal h3 .add{background:var(--pink);color:var(--txt);width:30px;height:30px;border-radius:50%;display:grid;place-items:center;padding:0}
 .entry{display:flex;justify-content:space-between;padding:9px 0;border-top:1px solid color-mix(in srgb,var(--hint) 18%,transparent);gap:10px}
 .entry:first-of-type{margin-top:8px}
 .entry .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .entry .k{white-space:nowrap;font-weight:600}
 nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--sec);padding:6px 8px calc(6px + env(safe-area-inset-bottom));border-top:1px solid color-mix(in srgb,var(--hint) 15%,transparent)}
 nav button{flex:1;padding:8px 0;font-size:12px;color:var(--hint);display:flex;flex-direction:column;align-items:center;gap:2px}
-nav button span{font-size:20px}
-nav button.on{color:var(--acc)}
+nav button i{display:grid;place-items:center;width:56px;height:30px;border-radius:15px;transition:background .2s}
+nav button.on{color:var(--txt);font-weight:600}
+nav button.on i{background:var(--pink)}
+
 .tab[hidden]{display:none}
 .sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;z-index:10}
 .sheet{position:fixed;left:0;right:0;bottom:0;max-height:92vh;overflow:auto;background:var(--bg);border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));z-index:11;transform:translateY(100%);transition:transform .25s}
@@ -82,6 +86,8 @@ h2{font-size:18px;margin:16px 0 4px}
 .skel{animation:pulse 1.2s infinite}
 @keyframes pulse{50%{opacity:.45}}
 .saved{display:flex;gap:10px;align-items:center;cursor:pointer}
+.meta{display:flex;align-items:center;gap:5px}
+.closeb{display:grid;place-items:center;width:32px;height:32px;color:var(--hint)}
 </style>
 </head>
 <body>
@@ -89,9 +95,9 @@ h2{font-size:18px;margin:16px 0 4px}
 <!-- ДНЕВНИК -->
 <div class="tab" id="tab-diary">
   <header>
-    <button id="prev">‹</button>
+    <button id="prev" aria-label="Назад"><i data-ic="left" data-s="20"></i></button>
     <div><div class="title" id="dayTitle">Сегодня</div><div class="hint" id="daySub" style="text-align:center"></div></div>
-    <button id="next">›</button>
+    <button id="next" aria-label="Вперёд"><i data-ic="right" data-s="20"></i></button>
   </header>
   <div class="card summary">
     <div class="ring">
@@ -162,7 +168,7 @@ h2{font-size:18px;margin:16px 0 4px}
     <div><label class="hint">Что есть дома (необязательно)</label><input id="rHave" placeholder="курица, рис, брокколи"></div>
     <div><label class="hint">Пожелания</label><input id="rWish" placeholder="без духовки, до 20 минут, острое"></div>
     <div><label class="hint">Исключить</label><input id="rNo" placeholder="грибы, лук"></div>
-    <button class="btn" id="rGo">✨ Придумать</button>
+    <button class="btn" id="rGo"></button>
   </div>
   <div id="rOut"></div>
   <h2 id="rSavedH" hidden>Сохранённые</h2>
@@ -170,23 +176,23 @@ h2{font-size:18px;margin:16px 0 4px}
 </div>
 
 <nav>
-  <button data-tab="diary" class="on"><span>🍽</span>Дневник</button>
-  <button data-tab="recipes"><span>🍳</span>Рецепты</button>
-  <button data-tab="stats"><span>📊</span>Статистика</button>
-  <button data-tab="goals"><span>🎯</span>Цели</button>
+  <button data-tab="diary" class="on"><i data-ic="diary" data-s="24"></i>Дневник</button>
+  <button data-tab="recipes"><i data-ic="chef" data-s="24"></i>Рецепты</button>
+  <button data-tab="stats"><i data-ic="stats" data-s="24"></i>Статистика</button>
+  <button data-tab="goals"><i data-ic="goal" data-s="24"></i>Цели</button>
 </nav>
 
 <!-- ШТОРКА ДОБАВЛЕНИЯ -->
 <div id="sheetWrap">
   <div class="sheet-bg" id="sheetBg"></div>
   <div class="sheet stack">
-    <div class="row"><b class="grow" id="sheetTitle" style="font-size:17px">Добавить</b><button id="closeSheet" style="font-size:22px;color:var(--hint)">✕</button></div>
+    <div class="row"><b class="grow" id="sheetTitle" style="font-size:17px">Добавить</b><button id="closeSheet" class="closeb" aria-label="Закрыть"><i data-ic="close" data-s="20"></i></button></div>
     <div class="seg" id="mealSel"></div>
 
     <div id="scanBox" hidden><div id="reader"></div><button class="btn ghost" id="stopScan" style="margin-top:8px">Отмена</button></div>
     <div class="row" id="scanRow">
-      <button class="btn ghost" id="startScan" style="width:auto;flex:none">📷 Скан</button>
-      <input id="bcInput" class="grow" placeholder="или введи штрихкод" inputmode="numeric">
+      <button class="btn ghost" id="startScan" style="width:auto;flex:none"><i data-ic="scan" data-s="18"></i>Скан</button>
+      <input id="bcInput" class="grow" placeholder="штрихкод" inputmode="numeric">
       <button class="btn ghost" id="bcFind" style="width:auto;flex:none">Найти</button>
     </div>
 
@@ -219,6 +225,26 @@ if (tg) {
   try { tg.setHeaderColor('#F1F7F7'); tg.setBackgroundColor('#F1F7F7'); tg.setBottomBarColor && tg.setBottomBarColor('#D5E5E5'); } catch (e) {}
 }
 const haptic = t => { try { tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred(t || 'light'); } catch (e) {} };
+
+/* ---------- Иконки (линейные, 1.8px) ---------- */
+const ICONS = {
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  close: '<path d="M6 6l12 12M18 6L6 18"/>',
+  left: '<path d="M15 6l-6 6 6 6"/>',
+  right: '<path d="M9 6l6 6-6 6"/>',
+  diary: '<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>',
+  chef: '<path d="M17 21a1 1 0 0 0 1-1v-5.35c0-.457.316-.844.727-1.041a4 4 0 0 0-2.134-7.589 5 5 0 0 0-9.186 0 4 4 0 0 0-2.134 7.588c.411.198.727.585.727 1.041V20a1 1 0 0 0 1 1Z"/><path d="M6 17h12"/>',
+  stats: '<path d="M6 20v-6M12 20V5M18 20v-10"/>',
+  goal: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r=".6"/>',
+  scan: '<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10"/>',
+  star: '<path d="M12 3l2.7 5.5 6 .9-4.4 4.2 1 6-5.3-2.8-5.3 2.8 1-6-4.4-4.2 6-.9z"/>',
+  refresh: '<path d="M21 4v6h-6"/><path d="M20 15a9 9 0 1 1-2.1-9.4L21 10"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  spark: '<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 16v4M17 18h4"/>'
+};
+const ic = (n, s = 18) => `<svg class="ic" viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n]}</svg>`;
+document.querySelectorAll('[data-ic]').forEach(el => { el.innerHTML = ic(el.dataset.ic, +el.dataset.s || 18); });
+$('#rGo').innerHTML = ic('spark') + 'Придумать';
 
 /* ---------- Хранилище: облако Telegram + localStorage как кэш ---------- */
 const cloud = !!(tg && tg.initData && tg.CloudStorage && tg.isVersionAtLeast && tg.isVersionAtLeast('6.9'));
@@ -302,7 +328,7 @@ function renderDay() {
   $('#meals').innerHTML = MEALS.map((name, i) => {
     const list = entries.filter(e => e.m === i);
     const mk = Math.round(sum(list).k);
-    return `<div class="card meal"><h3><span>${name} ${mk ? `<span class="hint">· ${mk} ккал</span>` : ''}</span><button class="add" data-meal="${i}">+</button></h3>
+    return `<div class="card meal"><h3><span>${name} ${mk ? `<span class="hint">· ${mk} ккал</span>` : ''}</span><button class="add" data-meal="${i}" aria-label="Добавить">${ic('plus', 16)}</button></h3>
       ${list.map(e => { const tt = tot(e); return `<div class="entry" data-id="${e.id}">
         <div style="min-width:0"><div class="n">${esc(e.n)}</div><div class="hint">${r1(e.g)} г · Б ${r1(tt.p)} Ж ${r1(tt.f)} У ${r1(tt.c)}</div></div>
         <div class="k">${Math.round(tt.k)}</div></div>`; }).join('')}</div>`;
@@ -517,7 +543,7 @@ async function genRecipe(again) {
     body = { meal: MEALS[meal], target, have: $('#rHave').value.trim().slice(0, 200), wish: $('#rWish').value.trim().slice(0, 200), exclude: $('#rNo').value.trim().slice(0, 200) };
     lastReq = { body, meal, names: [] };
   }
-  const btn = $('#rGo'); btn.disabled = true; btn.textContent = 'Придумываю…';
+  const btn = $('#rGo'); btn.disabled = true; btn.innerHTML = ic('spark') + 'Придумываю…';
   $('#rOut').innerHTML = '<div class="card skel hint">Шеф думает над рецептом… обычно 5–20 секунд</div>';
   try {
     const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Init-Data': (tg && tg.initData) || '' }, body: JSON.stringify(body) });
@@ -528,7 +554,7 @@ async function genRecipe(again) {
     haptic('medium');
   } catch (e) {
     $('#rOut').innerHTML = `<div class="card hint">Не получилось: ${esc(e.message)}. Попробуй ещё раз.</div>`;
-  } finally { btn.disabled = false; btn.textContent = '✨ Придумать'; }
+  } finally { btn.disabled = false; btn.innerHTML = ic('spark') + 'Придумать'; }
 }
 $('#rGo').onclick = () => genRecipe(false);
 
@@ -544,18 +570,18 @@ function renderRecipe(r, meal, savedId) {
   $('#rOut').innerHTML = `<div class="card recipe">
     <h3 style="margin:0 0 4px">${esc(r.name)}</h3>
     ${r.description ? `<div class="hint">${esc(r.description)}</div>` : ''}
-    <div class="hint" style="margin-top:6px">⏱ ${r.time_min ? r.time_min + ' мин' : '—'} · порций: ${r.servings || 1} · ${MEALS[meal]}</div>
+    <div class="hint meta" style="margin-top:6px">${ic('clock', 14)}${r.time_min ? r.time_min + ' мин' : '—'} · порций: ${r.servings || 1} · ${MEALS[meal]}</div>
     <div style="margin-top:8px"><b>${Math.round(t.k)} ккал</b> на порцию · Б ${Math.round(t.p)} · Ж ${Math.round(t.f)} · У ${Math.round(t.c)}
       <div class="hint">порция ≈ ${Math.round(t.g)} г продуктов, КБЖУ примерное</div></div>
     <b style="display:block;margin-top:10px">Ингредиенты</b>
     <ul>${r.ingredients.map(i => `<li>${esc(i.name)} — ${Math.round(i.grams)} г</li>`).join('')}</ul>
     <b>Как готовить</b>
     <ol>${r.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>
-    ${r.tips ? `<div class="hint">💡 ${esc(r.tips)}</div>` : ''}
+    ${r.tips ? `<div class="hint">Совет: ${esc(r.tips)}</div>` : ''}
     <div class="btnrow" style="margin-top:12px">
-      <button class="btn" data-act="add">➕ В дневник</button>
-      ${savedId ? '<button class="btn danger" data-act="del">Удалить</button>' : '<button class="btn ghost" data-act="save">⭐ Сохранить</button>'}
-      ${!savedId && lastReq ? '<button class="btn ghost" data-act="again">🔄 Другое</button>' : ''}
+      <button class="btn" data-act="add">${ic('plus')}В дневник</button>
+      ${savedId ? '<button class="btn danger" data-act="del">Удалить</button>' : `<button class="btn ghost" data-act="save">${ic('star')}Сохранить</button>`}
+      ${!savedId && lastReq ? `<button class="btn ghost" data-act="again">${ic('refresh')}Другое</button>` : ''}
     </div></div>`;
 }
 $('#rOut').addEventListener('click', ev => {
@@ -577,7 +603,7 @@ $('#rOut').addEventListener('click', ev => {
 async function loadSaved() { const r = await sGet(['rlist']); savedList = parse(r.rlist, []); renderSaved(); }
 function renderSaved() {
   $('#rSavedH').hidden = !savedList.length;
-  $('#rSaved').innerHTML = savedList.map(s => `<div class="card saved" data-sid="${s.id}"><div class="grow entry" style="border:0;padding:0"><span class="n">${esc(s.n)}</span></div><span class="hint">${s.k} ккал ›</span></div>`).join('');
+  $('#rSaved').innerHTML = savedList.map(s => `<div class="card saved" data-sid="${s.id}"><div class="grow entry" style="border:0;padding:0"><span class="n">${esc(s.n)}</span></div><span class="hint meta">${s.k} ккал${ic('right', 14)}</span></div>`).join('');
 }
 function saveRecipe() {
   const id = Date.now().toString(36), v = JSON.stringify(shown.r);
